@@ -1,14 +1,14 @@
-/* 小麥的杖劍工具集 v1.0.3：幻獸養成規劃工具，GitHub Pages 靜態網站。 */
+/* 小麥的杖劍工具集 v1.0.4：幻獸養成規劃工具，GitHub Pages 靜態網站。 */
 (() => {
   'use strict';
   const G = window.GAME_DATA;
   const ROOT = document.querySelector('#app');
   const LEGACY_SAVE_KEY = 'fantasy-pet-planner-v1';
   const PROFILE_SAVE_KEY = 'wheat-sword-tools-characters-v1';
-  const SITE_VERSION = 'v1.0.3';
-  // 站長設定：建立並發布 Google 表單後，填入 docs.google.com/forms/d/e/.../viewform 公開填答網址。
-  // 在設定完成前，網站不會假裝回報已送出或使用其他回報管道。
-  const GOOGLE_FORM_URL = '';
+  const SITE_VERSION = 'v1.0.4';
+  // 已設定使用者提供的 Google 表單公開填答網址。
+  // 玩家需在 Google 表單內按「提交」，本站不會假稱已送達。
+  const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfBftWrLdNy256kPclYhL8O8hQUevGJZFAx5eOnfyEHZndADg/viewform';
   const TYPE_ORDER = ['防禦', '攻擊', '輔助'];
   const RARITY_ORDER = ['奇蹟', '傳說', '稀有'];
   const TABS = [

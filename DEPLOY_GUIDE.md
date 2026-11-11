@@ -19,7 +19,7 @@ git clone https://github.com/cities0809/Kanstin-Cities-Tools.git
 cd Kanstin-Cities-Tools
 # 把新版本網站檔案複製到此資料夾，檢查內容後執行：
 git add index.html app.js data.js styles.css README.md DEPLOY_GUIDE.md .nojekyll
-git commit -m "Release tools hub v1.0.3"
+git commit -m "Release tools hub v1.0.4"
 git push origin main
 ```
 
@@ -34,14 +34,14 @@ git push origin main
 
 已移除原本的 GitHub Issues 與 Email 備用。網站只接受 Google 表單作為回報端點。
 
-**尚需站長完成的設定**：
+**Google 表單已接入（v1.0.4）**
 
-1. 在 <https://forms.google.com/> 建立並「發布」公開 Google Form，建議題目為回報分類、使用工具、問題描述、可選聯絡方式。為方便玩家不登入，勿強制收集 Email、勿要求上傳檔案，並確認沒有組織／次數限制。
-2. 取得公開表單的完整填答連結 `https://docs.google.com/forms/d/e/<FORM_ID>/viewform`。
-3. 修改 `app.js` 開頭的 `GOOGLE_FORM_URL = ''`，填入該連結並提交 GitHub；這個網址是公開資訊，不含 Google API 金鑰。
-4. 重新整理網站並按「問題回報」，會看到內嵌表單及「在新分頁開啟表單」按鈕。使用無痕模式送出測試，再從 Google 表單回應頁確認收到資料。
-
-在上述設定完成前，網站明確顯示「Google 表單尚未開放」，不會顯示假的成功訊息。
+- 公開填答網址：<https://docs.google.com/forms/d/e/1FAIpQLSfBftWrLdNy256kPclYhL8O8hQUevGJZFAx5eOnfyEHZndADg/viewform>
+- `app.js` 的 `GOOGLE_FORM_URL` 已設定，網站自動產生 `embedded=true` 的嵌入連結，並保留「在新分頁開啟表單」按鈕。
+- 表單實際送出由 Google Forms 執行；本站不會擷取答案，也無法自行確認是否已收到。
+- **驗收方式**：使用未登入 Google 的無痕視窗開啟網站的「問題回報」，填寫測試回應並在 Google 表單按「提交」，到表單的「回覆」頁確認接收成功。
+- 如出現要求登入或無法填答，請在 Google Forms 檢查「接受回覆」、「限制使用者」、「每人限填一次」或組織存取限制。嵌入網址無法繞過表單本身的設定。
+- 日後換表單時，只需調整 `GOOGLE_FORM_URL` 並重新發布 GitHub Pages。
 
 ## E. 捐款與付費解鎖的可行架構
 
