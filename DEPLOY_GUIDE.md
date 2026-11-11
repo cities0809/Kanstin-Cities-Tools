@@ -19,7 +19,7 @@ git clone https://github.com/cities0809/Kanstin-Cities-Tools.git
 cd Kanstin-Cities-Tools
 # 把新版本網站檔案複製到此資料夾，檢查內容後執行：
 git add index.html app.js data.js styles.css README.md DEPLOY_GUIDE.md .nojekyll
-git commit -m "Release tools hub v1.0.1"
+git commit -m "Release tools hub v1.0.2"
 git push origin main
 ```
 

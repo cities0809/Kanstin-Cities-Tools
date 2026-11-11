@@ -1,12 +1,13 @@
-/* 小麥的杖劍工具集 v1.0.1：幻獸養成規劃工具，GitHub Pages 靜態網站。 */
+/* 小麥的杖劍工具集 v1.0.2：幻獸養成規劃工具，GitHub Pages 靜態網站。 */
 (() => {
   'use strict';
   const G = window.GAME_DATA;
   const ROOT = document.querySelector('#app');
   const LEGACY_SAVE_KEY = 'fantasy-pet-planner-v1';
   const PROFILE_SAVE_KEY = 'wheat-sword-tools-characters-v1';
-  const SITE_VERSION = 'v1.0.1';
+  const SITE_VERSION = 'v1.0.2';
   const FEEDBACK_EMAIL = 'cities0809@gmail.com';
+  const FEEDBACK_ISSUES_URL = 'https://github.com/cities0809/Kanstin-Cities-Tools/issues/new';
   const TYPE_ORDER = ['防禦', '攻擊', '輔助'];
   const RARITY_ORDER = ['奇蹟', '傳說', '稀有'];
   const TABS = [
@@ -44,6 +45,14 @@
     const abs = asPct ? gamePercentText(Math.abs(x)) : fmtN.format(Math.abs(x));
     return (x > 0 ? '+' : x < 0 ? '−' : '±') + abs;
   };
+  // 提升細項皆採六欄顯示，數值以已逐隻截尾的屬性差額計算；零增益也如實呈現。
+  function gainBreakdown(deltas, extraClass='') {
+    return `<div class="attr-gain-grid ${extraClass}" role="group" aria-label="六項屬性個別變化">${G.labels.map((label,i)=>{
+      const value=Number(deltas?.[i]??0);
+      const state=value>1e-10?'positive':value< -1e-10?'negative':'neutral';
+      return `<div class="attr-gain-cell ${state}"><span>${safe(label)}</span><strong>${state==='neutral'?pct(0):numberDelta(value,true)}</strong></div>`;
+    }).join('')}</div>`;
+  }
   const stageLabel = n => ['關鍵節點','第1節點','第2節點'][n] ?? '未知節點';
   const progressLabel = (page,stage) => `第${page}頁 · ${stageLabel(stage)}`;
   const firstBase = rarity => G.rarityBase[rarity] ?? 0;
@@ -144,9 +153,10 @@
   catch{PROFILES=restoreProfiles(null)}
   const activeCharacter=()=>PROFILES.characters.find(p=>p.id===PROFILES.activeId)||PROFILES.characters[0];
   let S=activeCharacter().state;
-  const UI={route:location.hash.startsWith('#/pet')?'pet':'home',tab:'collection',search:'',type:'全部',rarity:'全部',ownedOnly:false,showSaveInfo:false,deletePlanId:null,syncGain:S.syncGain, abilityType:'全部',syncType:'綜合',optimizerGoal:'total',optimizerWeights:[1,1,1,1,1,1],optimizerLocked:[false,false,false,false],optimizerResults:null,plannerMode:'recycle',plannerResults:null,profileDialog:null,feedbackOpen:false,importTarget:'current'};
+  const UI={route:location.hash.startsWith('#/pet')?'pet':'home',tab:'collection',search:'',type:'全部',rarity:'全部',ownedOnly:false,showSaveInfo:false,deletePlanId:null,syncGain:S.syncGain, abilityType:'全部',syncType:'綜合',optimizerGoal:'total',optimizerWeights:[1,1,1,1,1,1],optimizerLocked:[false,false,false,false],optimizerResults:null,plannerMode:'recycle',plannerResults:null,profileDialog:null,feedbackOpen:false,catalogOpen:!S.owned.length,importTarget:'current'};
   let toastTimeout;
-  const ownedPets = () => G.pets.filter(p=>S.owned.includes(p.id));
+  const sortPetsByType = (a,b) => TYPE_ORDER.indexOf(a.type)-TYPE_ORDER.indexOf(b.type);
+  const ownedPets = () => G.pets.filter(p=>S.owned.includes(p.id)).sort(sortPetsByType);
   const progressOf = id => S.progress[id] || {sync:null,page:1,stage:1};
   const planOf = () => S.plans.find(p=>p.id===S.activePlan) || S.plans[0];
   const positionOf=(plan,id)=>plan.slots[0]===id?1:plan.slots.slice(1).includes(id)?0.5:0.2;
@@ -203,15 +213,17 @@
   function overallKpis(s){return `<div class="stats-row">${kpi('已持有幻獸',`${S.owned.length} <span style="font-size:14px;color:#8c92a9">/ ${G.pets.length}</span>`,'可隨時加入或取消','🐾')}${kpi('六項屬性合計',pct(s.total),'每隻各項屬性已先截尾','✦','purple')}${kpi('材料晨星估值',s.cost==null?'待補資料':money(s.cost),s.cost==null?'仍可先查看已知屬性':'依三種材料市場行情','💎')}${kpi('每 1% 屬性估值',s.perPercent==null?'—':money(s.perPercent),s.perPercent==null?'需有完整資料':'晨星／百分點','⚖️','teal')}</div>`}
   function collection(){
     const owned=ownedPets(),plan=planOf(),tot=calcPlan(plan);
-    const filtered=G.pets.filter(p=>(!UI.search||p.name.includes(UI.search))&&(UI.type==='全部'||p.type===UI.type)&&(UI.rarity==='全部'||p.rarity===UI.rarity)&&(!UI.ownedOnly||S.owned.includes(p.id))).sort((a,b)=>TYPE_ORDER.indexOf(a.type)-TYPE_ORDER.indexOf(b.type));
+    const filtered=G.pets.filter(p=>(!UI.search||p.name.includes(UI.search))&&(UI.type==='全部'||p.type===UI.type)&&(UI.rarity==='全部'||p.rarity===UI.rarity)&&(!UI.ownedOnly||S.owned.includes(p.id))).sort(sortPetsByType);
     const needs=owned.filter(p=>progressOf(p.id).sync==null||progressOf(p.id).sync>syncCap(p)).length;
     const button=`<button class="button small" data-action="demo">✧ 載入既有18隻示範資料</button>`;
     return `${titleStrip('我的幻獸','先選擇你擁有的幻獸，再設定每隻的基礎同調及養成進度。',button)}<div class="character-context"><span>目前角色：<strong>${safe(activeCharacter().name)}</strong>　·　已建立 ${PROFILES.characters.length} 組角色</span><div class="actions-right"><button class="button small" data-action="add-character">＋ 新增角色</button><button class="button small" data-action="rename-character">重新命名</button>${PROFILES.characters.length>1?`<button class="button small danger" data-action="delete-character">刪除目前角色</button>`:''}</div></div>
       <div class="hero"><div><small>YOUR COMPANIONS, YOUR BUILD</small><h2>從自己的幻獸出發，<br>找到最適合的養成配置。</h2><p>不用填寫複雜的試算表。勾選幻獸、輸入三項數據，就能開始試算。</p></div><button class="hero-btn" data-action="go-slots">前往同調配置 ↗</button><div class="hero-icon">✧</div></div>
       <div class="stats-row">${kpi('已持有',`${owned.length} 隻`,'未持有的不會參與計算','🐾','purple')}${kpi('已設定進度',`${owned.length-needs} 隻`,owned.length===0?'尚未開始登錄':needs?`還有 ${needs} 隻基礎同調未填或超過上限`:'全部已完成','✓')}${kpi('圖鑑總數',`${G.pets.length} 隻`,'依現有 V2.4 資料建立','◇')}${kpi('目前方案屬性',pct(tot.total),'已完成設定的幻獸小計','✦','teal')}</div>
-      <div class="section-line"><h2>幻獸圖鑑 <span class="small-muted">${filtered.length} 隻</span></h2><div class="actions-right"><button class="button small" data-action="select-all">全選</button><button class="button small" data-action="select-none">全部取消</button></div></div>
+      <div class="section-line catalog-heading"><h2>幻獸圖鑑 <span class="small-muted">${filtered.length} 隻 · 已持有 ${owned.length} 隻</span></h2><button class="button small catalog-toggle" type="button" data-action="toggle-catalog" aria-expanded="${UI.catalogOpen}" aria-controls="pet-catalog">${UI.catalogOpen?'▴ 收合圖鑑':'▾ 展開圖鑑／選擇幻獸'}</button></div>
+      <section id="pet-catalog" class="catalog-panel" ${UI.catalogOpen?'':'hidden'} aria-label="所有幻獸圖鑑">
+      <div class="catalog-tools"><div class="small-muted">可按類型與階級篩選，並點選卡片標記持有</div><div class="actions-right"><button class="button small" data-action="select-all">全選</button><button class="button small" data-action="select-none">全部取消</button></div></div>
       <div class="control-row" style="margin-bottom:15px"><div class="search"><span class="search-icon">⌕</span><input id="pet-search" class="input" placeholder="搜尋幻獸名稱…" value="${safe(UI.search)}" data-action="search-pet" /></div><div class="segmented">${['全部',...TYPE_ORDER].map(t=>`<button data-action="filter-type" data-val="${t}" class="${UI.type===t?'on':''}">${t}</button>`).join('')}</div><select class="select-inline" data-action="filter-rarity"><option value="全部">所有階級</option>${RARITY_ORDER.map(t=>`<option value="${t}" ${UI.rarity===t?'selected':''}>${t}</option>`).join('')}</select><label class="small-muted"><input type="checkbox" data-action="owned-only" ${UI.ownedOnly?'checked':''}/> 只顯示已持有</label></div>
-      <div class="catalog">${filtered.map(p=>{let yes=S.owned.includes(p.id);return `<button class="pet-card ${yes?'owned':''}" data-action="toggle-owned" data-id="${p.id}" aria-pressed="${yes}">${petIcon(p)}<div class="pet-meta"><div class="pet-name">${safe(p.name)}</div><div class="pet-tags">${typePill(p)} ${rarityPill(p)}</div></div><span class="pet-check">✓</span></button>`}).join('')||empty('⌕','找不到符合的幻獸','試著清除搜尋或分類條件。')}</div>
+      <div class="catalog">${filtered.map(p=>{let yes=S.owned.includes(p.id);return `<button class="pet-card ${yes?'owned':''}" data-action="toggle-owned" data-id="${p.id}" aria-pressed="${yes}">${petIcon(p)}<div class="pet-meta"><div class="pet-name">${safe(p.name)}</div><div class="pet-tags">${typePill(p)} ${rarityPill(p)}</div></div><span class="pet-check">✓</span></button>`}).join('')||empty('⌕','找不到符合的幻獸','試著清除搜尋或分類條件。')}</div></section>
       <div class="section-line" id="owned-editor"><h2>我的養成紀錄 <span class="small-muted">${owned.length} 隻</span></h2>${owned.length?'<span class="small-muted">基礎同調請輸入百分點，例如 56 代表 56%</span>':''}</div>
       ${owned.length?`<div class="owned-list">${owned.map(p=>{let x=progressOf(p.id);return `<div class="owned-row" id="pet-editor-${p.id}"><div class="owned-label">${petIcon(p)}<div style="min-width:0"><strong>${safe(p.name)}</strong><span class="secondary">${p.type} · ${p.rarity} · 基礎同調上限 ${syncCap(p)}% ${x.sync==null?'· 尚未設定':x.sync>syncCap(p)?'· ⚠ 超出上限':'· 已設定'}</span></div></div><div class="field"><label>基礎同調 (%) · 最高 ${syncCap(p)}%</label><input data-action="progress" data-id="${p.id}" data-key="sync" class="${x.sync!=null&&x.sync>syncCap(p)?'invalid-sync':''}" type="number" min="0" max="${syncCap(p)}" step="0.1" placeholder="0～${syncCap(p)}" value="${x.sync==null?'':x.sync}" />${x.sync!=null&&x.sync>syncCap(p)?`<small class="sync-warning">已匯入的 ${fmtN.format(x.sync)}% 超過上限 ${syncCap(p)}%，資料已保留，請修正後再計算。</small>`:''}</div><div class="field"><label>能力頁數</label><select data-action="progress" data-id="${p.id}" data-key="page">${pageOptions(x.page)}</select></div><div class="field"><label>強化節點</label><select data-action="progress" data-id="${p.id}" data-key="stage">${stageOptions(x.page,x.stage)}</select></div><button class="button small danger" data-action="toggle-owned" data-id="${p.id}">取消持有</button></div>`}).join('')}</div>`:empty('🐾','還沒有選取幻獸','在上面的圖鑑勾選已擁有的幻獸，就會出現養成輸入欄位。',`<button class="button primary small" data-action="demo">試用示範資料</button>`)}
       <div class="notice good">💡 取消持有不會刪除已輸入的養成數據；重新勾選即可恢復。資料只儲存在這台裝置的瀏覽器中。</div>`;
@@ -479,9 +491,9 @@
       <div class="notice">目前顯示「${safe(plan.name)}」。如需先重新分配所有小材料，請至「養成規劃」執行最佳化並選用方案。基礎同調需要同名碎片，與三類小材料分開評估。</div>
       <div class="stats-row">${kpi('選定方案六項屬性',pct(stats.total),'以模擬節點及位置計算','✦','purple')}${kpi('小雞蛋可剩餘',fmtInt.format(pool.budget['防禦']-stats.qty['防禦']),'含退回與背包存量','🛡️')}${kpi('小羽毛可剩餘',fmtInt.format(pool.budget['攻擊']-stats.qty['攻擊']),'含退回與背包存量','⚔️')}${kpi('小精油可剩餘',fmtInt.format(pool.budget['輔助']-stats.qty['輔助']),'含退回與背包存量','✨')}</div>
       <div class="section-line"><h2>③ 下一步能力頁數提升</h2><small>三種材料分組，依小材料／1%屬性排行</small></div>
-      <div class="planner-next-grid">${TYPE_ORDER.map(t=>{const list=rank.filter(x=>x.pet.type===t);const available=pool.budget[t]-stats.qty[t];return `<div class="card">${cardTitle(`${G.typeIcons[t]} ${t}型｜${G.materialNames[t]}`,`剩餘 ${fmtInt.format(available)} 個小材料`)}${list.length?list.slice(0,5).map((x,i)=>`<div class="next-item"><strong>${i+1}. ${safe(x.pet.name)}</strong><span>${progressLabel(x.from.page,x.from.stage)} → ${progressLabel(x.next.page,x.next.stage)}</span><span>需 ${fmtInt.format(x.extraMat)} 個／屬性 ${numberDelta(x.benefit,true)} ${x.extraMat<=available?pill('材料足夠','ok'):pill('材料不足','warn')}</span></div>`).join(''):empty('✓','沒有可見增益節點','這個類型目前沒有符合條件的下一階。')}</div>`}).join('')}</div>
+      <div class="planner-next-grid">${TYPE_ORDER.map(t=>{const list=rank.filter(x=>x.pet.type===t);const available=pool.budget[t]-stats.qty[t];return `<div class="card">${cardTitle(`${G.typeIcons[t]} ${t}型｜${G.materialNames[t]}`,`剩餘 ${fmtInt.format(available)} 個小材料`)}${list.length?list.slice(0,5).map((x,i)=>`<div class="next-item"><strong>${i+1}. ${safe(x.pet.name)}</strong><span>${progressLabel(x.from.page,x.from.stage)} → ${progressLabel(x.next.page,x.next.stage)}</span><span>需 ${fmtInt.format(x.extraMat)} 個／屬性 ${numberDelta(x.benefit,true)} ${x.extraMat<=available?pill('材料足夠','ok'):pill('材料不足','warn')}</span>${gainBreakdown(x.changes)}</div>`).join(''):empty('✓','沒有可見增益節點','這個類型目前沒有符合條件的下一階。')}</div>`}).join('')}</div>
       <div class="section-line"><h2>④ 下一步基礎同調提升</h2><small>同名幻獸碎片；預計 +${fmtN.format(UI.syncGain)} 個百分點</small></div>
-      <div class="card"><div class="control-row" style="margin-bottom:12px">${analysisTypeSelect('analysis-sync-type',UI.syncType)}<button class="button small" data-action="go-analysis">查看完整屬性效益</button></div>${(UI.syncType==='綜合'?syncRank:syncRank.filter(x=>UI.syncType==='全部'||x.pet.type===UI.syncType)).slice(0,9).map((r,i)=>`<div class="next-item"><strong>${i+1}. ${safe(r.pet.name)} ${typePill(r.pet)}</strong><span>${fmtN.format(r.before)}% → ${fmtN.format(r.afterSync)}%；實際提升 ${fmtN.format(r.actualGain)} 個百分點</span><span class="up">六項屬性增加 ${numberDelta(r.extra,true)}</span></div>`).join('')||'<p class="small-muted">目前無符合篩選條件的幻獸。</p>'}<p class="small-muted" style="margin-top:12px">※ 未有各隻幻獸的碎片消耗量資料，故此處只依實際屬性收益排名，不稱為碎片CP值。</p></div>`;
+      <div class="card"><div class="control-row" style="margin-bottom:12px">${analysisTypeSelect('analysis-sync-type',UI.syncType)}<button class="button small" data-action="go-analysis">查看完整屬性效益</button></div>${(UI.syncType==='綜合'?syncRank:syncRank.filter(x=>UI.syncType==='全部'||x.pet.type===UI.syncType)).slice(0,9).map((r,i)=>`<div class="next-item"><strong>${i+1}. ${safe(r.pet.name)} ${typePill(r.pet)}</strong><span>${fmtN.format(r.before)}% → ${fmtN.format(r.afterSync)}%；實際提升 ${fmtN.format(r.actualGain)} 個百分點</span><span class="up">六項屬性增加 ${numberDelta(r.extra,true)}</span>${gainBreakdown(r.changes)}</div>`).join('')||'<p class="small-muted">目前無符合篩選條件的幻獸。</p>'}<p class="small-muted" style="margin-top:12px">※ 未有各隻幻獸的碎片消耗量資料，故此處只依實際屬性收益排名，不稱為碎片CP值。</p></div>`;
   }
   function simulation(){
     const plan=planOf(),sim=calcPlan(plan),actual=calcPlan(plan,false);
@@ -508,8 +520,9 @@
       const nextVal=petCalc(p,tempPlan,true);
       const extraMat=nextVal.materials-cur.materials;
       const extraCost=nextVal.cost!=null&&cur.cost!=null?nextVal.cost-cur.cost:null;
-      const benefit=nextVal.total-cur.total;
-      return {pet:p,from:cur,next,extraMat,extraCost,benefit,
+      const changes=G.labels.map((_,i)=>Math.max(0,Math.round((nextVal.attrs[i]-cur.attrs[i])*1e10)/1e10));
+      const benefit=changes.reduce((a,b)=>a+b,0);
+      return {pet:p,from:cur,next,extraMat,extraCost,benefit,changes,
         materialPerPoint:benefit>1e-10?extraMat/(benefit*100):null,
         eff:benefit>1e-10&&extraCost!=null?extraCost/(benefit*100):null};
     }).filter(x=>x&&x.benefit>1e-10&&x.extraMat>=0)
@@ -533,8 +546,8 @@
         const rows=ranking.filter(x=>x.pet.type===t),best=rows[0],label=G.materialNames[t];
         return `<section class="type-group" data-type="${t}">
           <div class="type-group-head"><div><span class="type-glyph">${G.typeIcons[t]}</span><div><h3>${t}型幻獸</h3><span>${label} · 每 1 大材料 = 16 小材料</span></div></div><span class="type-count">可比較 ${rows.length} 隻</span></div>
-          ${best?`<div class="reco-best"><div><span class="mini-kicker">本類最推薦</span><div class="reco-pet">${petIcon(best.pet)}<div><strong>${safe(best.pet.name)}</strong><small>${safe(best.pet.rarity)} · ${progressLabel(best.from.page,best.from.stage)} → ${progressLabel(best.next.page,best.next.stage)}</small></div></div></div><div class="reco-best-score"><span>每增加 1% 屬性需要</span><strong>${money(best.materialPerPoint)}</strong><small>${label}（小材料）</small></div></div>`:''}
-          ${rows.length?`<div class="ability-rank-list">${rows.map((r,i)=>`<div class="ability-rank-row"><span class="mini-rank">${i+1}</span><div class="ability-rank-name"><strong>${safe(r.pet.name)}</strong><small>下一步 ${progressLabel(r.next.page,r.next.stage)}</small></div><div><small>屬性增益</small><strong class="gain">${numberDelta(r.benefit,true)}</strong></div><div><small>需要${label}</small><strong>${fmtInt.format(r.extraMat)} 小</strong></div><div><small>小材料／1%</small><strong>${money(r.materialPerPoint)}</strong></div><div><small>晨星估值</small><strong>${money(r.extraCost)}</strong></div></div>`).join('')}</div>`:empty('◇','目前沒有可推薦的提升','請先勾選此類型幻獸、設定有效的養成資料；已滿階或沒有可見屬性提升者不列入。')}
+          ${best?`<div class="reco-best"><div><span class="mini-kicker">本類最推薦</span><div class="reco-pet">${petIcon(best.pet)}<div><strong>${safe(best.pet.name)}</strong><small>${safe(best.pet.rarity)} · ${progressLabel(best.from.page,best.from.stage)} → ${progressLabel(best.next.page,best.next.stage)}</small></div></div></div><div class="reco-best-score"><span>每增加 1% 屬性需要</span><strong>${money(best.materialPerPoint)}</strong><small>${label}（小材料）</small></div></div>${best?gainBreakdown(best.changes,'reco-breakdown'):''}`:''}
+          ${rows.length?`<div class="ability-rank-list">${rows.map((r,i)=>`<div class="ability-rank-row"><span class="mini-rank">${i+1}</span><div class="ability-rank-name"><strong>${safe(r.pet.name)}</strong><small>下一步 ${progressLabel(r.next.page,r.next.stage)}</small></div><div><small>屬性增益</small><strong class="gain">${numberDelta(r.benefit,true)}</strong></div><div><small>需要${label}</small><strong>${fmtInt.format(r.extraMat)} 小</strong></div><div><small>小材料／1%</small><strong>${money(r.materialPerPoint)}</strong></div><div><small>晨星估值</small><strong>${money(r.extraCost)}</strong></div>${gainBreakdown(r.changes)}</div>`).join('')}</div>`:empty('◇','目前沒有可推薦的提升','請先勾選此類型幻獸、設定有效的養成資料；已滿階或沒有可見屬性提升者不列入。')}
         </section>`;
       }).join('')}</div>
       <p class="analysis-disclaimer">※ 排名以各類型「小材料需求量 ÷ 實際增加的屬性百分點」比較；不同種類材料不直接混合排名。晨星僅為行情估值。如果下一階不增加可見屬性，該階段不列入推薦。</p>
@@ -575,8 +588,8 @@
         const best=rows.find(x=>x.extra>1e-10);
         const heading=all?'全部類型｜綜合排行榜':t+'型幻獸';
         return `<section class="type-group" data-type="${t}"><div class="type-group-head"><div><span class="type-glyph">${all?'🏆':G.typeIcons[t]}</span><div><h3>${heading}</h3><span>${all?'攻擊、防禦、輔助一起比較六項屬性增益；碎片成本不混算':'消耗：該幻獸自己的同名碎片'}</span></div></div><span class="type-count">尚可提升 ${rows.length} 隻</span></div>
-          ${best?`<div class="reco-best sync-best"><div><span class="mini-kicker">${all?'全類型最推薦':'本類最推薦'}</span><div class="reco-pet">${petIcon(best.pet)}<div><strong>${safe(best.pet.name)}</strong><small>${safe(best.pet.type)}型 · 基礎同調 ${fmtN.format(best.before)}% → ${fmtN.format(best.afterSync)}% · 預計 +${fmtN.format(gain)}，實際 +${fmtN.format(best.actualGain)} 個百分點${best.capped?'（達上限）':''}</small></div></div></div><div class="reco-best-score"><span>六項屬性總增益</span><strong>${numberDelta(best.extra,true)}</strong><small>未計碎片數量成本</small></div></div>`:''}
-          ${rows.length?`<div class="sync-list">${rows.map((r,i)=>`<div class="sync-rank-row ${r===best?'best':''}"><span class="sync-rank-no">${i+1}</span><div class="sync-rank-pet"><strong>${safe(r.pet.name)}${all?` <span class="pill ${r.pet.type}">${r.pet.type}</span>`:''}</strong><span>${safe(r.pet.rarity)} · ${fmtN.format(r.before)}% → ${fmtN.format(r.afterSync)}%（上限 ${syncCap(r.pet)}%） · 預計 +${fmtN.format(gain)}，實際 +${fmtN.format(r.actualGain)} 個百分點${r.capped?'（達上限）':''}</span></div><div class="sync-gain"><strong>${numberDelta(r.extra,true)}</strong><span>${r.changes.map((v,k)=>v>1e-10?`${G.labels[k]} +${(v*100).toFixed(2)}%`:null).filter(Boolean).join('、')||'本次提升無可見增益'}</span></div><button class="button xsmall sync-edit" data-action="edit-pet" data-id="${r.pet.id}">編輯</button></div>`).join('')}</div>`:empty('✦','目前沒有可提升的幻獸','已達基礎同調上限或尚未設定有效資料的幻獸不列入排名。')}
+          ${best?`<div class="reco-best sync-best"><div><span class="mini-kicker">${all?'全類型最推薦':'本類最推薦'}</span><div class="reco-pet">${petIcon(best.pet)}<div><strong>${safe(best.pet.name)}</strong><small>${safe(best.pet.type)}型 · 基礎同調 ${fmtN.format(best.before)}% → ${fmtN.format(best.afterSync)}% · 預計 +${fmtN.format(gain)}，實際 +${fmtN.format(best.actualGain)} 個百分點${best.capped?'（達上限）':''}</small></div></div></div><div class="reco-best-score"><span>六項屬性總增益</span><strong>${numberDelta(best.extra,true)}</strong><small>未計碎片數量成本</small></div></div>${best?gainBreakdown(best.changes,'reco-breakdown'):''}`:''}
+          ${rows.length?`<div class="sync-list">${rows.map((r,i)=>`<div class="sync-rank-row ${r===best?'best':''}"><span class="sync-rank-no">${i+1}</span><div class="sync-rank-pet"><strong>${safe(r.pet.name)}${all?` <span class="pill ${r.pet.type}">${r.pet.type}</span>`:''}</strong><span>${safe(r.pet.rarity)} · ${fmtN.format(r.before)}% → ${fmtN.format(r.afterSync)}%（上限 ${syncCap(r.pet)}%） · 預計 +${fmtN.format(gain)}，實際 +${fmtN.format(r.actualGain)} 個百分點${r.capped?'（達上限）':''}</span></div><div class="sync-gain"><strong>${numberDelta(r.extra,true)}</strong></div><button class="button xsmall sync-edit" data-action="edit-pet" data-id="${r.pet.id}">編輯</button>${gainBreakdown(r.changes)}</div>`).join('')}</div>`:empty('✦','目前沒有可提升的幻獸','已達基礎同調上限或尚未設定有效資料的幻獸不列入排名。')}
         </section>`;
       }).join('')}</div>
       <div class="notice sync-note">※ 「全部類型（綜合排行）」按六項屬性的<strong>實際增益</strong>跨類型排序，並非不同碎片價格的 CP 值；沒有碎片用量資料前，不會混合比較碎片成本。<strong>若你之前設定過10%，會沿用10%；可輸入12或按「恢復預設12%」。</strong></div>
@@ -672,12 +685,13 @@
   }
   function feedbackDialog(){
     if(!UI.feedbackOpen)return '';
-    return `<div class="modal-backdrop feedback-modal-backdrop" role="presentation"><section class="modal-card custom-dialog feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title"><div class="modal-warning">✉</div><h2 id="feedback-title">問題回報</h2>
-      <p>填寫遇到的狀況，按下「開啟郵件程式」即可建立寄給作者的郵件。<strong>請留意：必須在自己的郵件程式中確認送出，網站不會自行寄信。</strong></p>
+    return `<div class="modal-backdrop feedback-modal-backdrop" role="presentation"><section class="modal-card custom-dialog feedback-dialog" role="dialog" aria-modal="true" aria-labelledby="feedback-title"><div class="modal-warning">✉</div><h2 id="feedback-title">問題回報與功能建議</h2>
+      <p>在這裡填寫內容，再選擇送往 GitHub Issues（不需電子郵件）或開啟 Email。GitHub 送出前會讓你再確認一次。</p>
       <label class="profile-input-label" for="feedback-category">問題類型</label><select id="feedback-category" class="select-inline"><option>計算結果疑問</option><option>功能操作問題</option><option>錯誤／無法使用</option><option>新增功能建議</option><option>其他</option></select>
       <label class="profile-input-label" for="feedback-description">問題說明</label><textarea id="feedback-description" class="feedback-textarea" maxlength="2500" rows="5" placeholder="例如：我操作的步驟、預期結果、實際發生的問題…"></textarea>
-      <p class="feedback-note">收件信箱：<a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a>。不會自動附上角色資料或備份檔，若需協助請自行確認是否提供個人資訊。</p>
-      <div class="modal-actions"><button class="button" data-action="close-feedback">取消</button><button class="button primary" data-action="send-feedback">開啟郵件程式 ↗</button></div></section></div>`;
+      <div class="feedback-platform-note"><strong>GitHub Issues 回報方式</strong><span>點擊下方按鈕會將內容帶入 GitHub 的新議題頁；使用者須登入 GitHub，並自行按下「Submit new issue」才會正式回報。Issue 內容公開，請勿填寫個資或私密的遊戲紀錄。</span></div>
+      <p class="feedback-note">若沒有 GitHub 帳號，可改用 Email：<a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a>。未經同意不會自動上傳角色資料或備份檔。</p>
+      <div class="modal-actions feedback-actions"><button class="button primary" data-action="send-feedback-github">前往 GitHub 提交 ↗</button><button class="button" data-action="send-feedback">Email 備用</button><button class="button" data-action="close-feedback">取消</button></div></section></div>`;
   }
   function manual(){
     return `${titleStrip('操作說明手冊','從遊戲角色、幻獸輸入到最佳化方案，一步步完成規劃。',`<button class="button small" data-action="go-collection">開始設定我的幻獸 ↗</button>`)}
@@ -689,7 +703,7 @@
       <article class="manual-step"><span>04</span><h3>搜尋養成與同調配置</h3><p>選擇最佳化目標後搜尋，系統會推薦能力進度及100%／50%位置。也可到「同調配置」鎖定既有位置。推薦屬於迭代搜尋候選解，不保證全域最佳。</p></article>
       <article class="manual-step"><span>05</span><h3>另存方案、查看後續推薦</h3><p>確認候選結果後按「套用／選定此方案」，系統會新增方案，不會覆蓋實際養成紀錄。進入「後續推薦」可看每種類型的下一階能力與基礎同調增益。</p></article>
       <article class="manual-step"><span>06</span><h3>備份、匯入與換裝置</h3><p>「匯出目前角色」會產生單一角色 JSON；「備份全部角色」包含所有角色。換裝置可使用對應匯入。單純重新整理網站仍保留本機資料，但不同瀏覽器／電腦不會自動同步。</p></article></div>
-      <section class="manual-faq"><h2>常見問題</h2><details><summary>如果同時玩兩個遊戲角色，資料會混在一起嗎？</summary><p>不會。請用上方「＋ 新增角色」建立另一組資料。各角色的幻獸進度、同調方案與背包均分開儲存；切換角色後請核對上方名稱。</p></details><details><summary>我的紀錄會傳到伺服器嗎？</summary><p>目前沒有帳號系統，內容只存在使用中瀏覽器的 localStorage。清除網站資料、使用無痕模式或換裝置都可能造成紀錄無法讀取，請定期匯出 JSON。</p></details><details><summary>退回能力頁數材料會退回基礎同調嗎？</summary><p>不會。雞蛋／羽毛／精油用於能力頁數且可全額回收；基礎同調使用同名幻獸碎片，是獨立養成系統。</p></details><details><summary>報告計算錯誤或想提出功能建議？</summary><p>使用上方「問題回報」編輯郵件，或直接寄信至 <a href="mailto:${FEEDBACK_EMAIL}">${FEEDBACK_EMAIL}</a>。</p></details></section>`;
+      <section class="manual-faq"><h2>常見問題</h2><details><summary>如果同時玩兩個遊戲角色，資料會混在一起嗎？</summary><p>不會。請用上方「＋ 新增角色」建立另一組資料。各角色的幻獸進度、同調方案與背包均分開儲存；切換角色後請核對上方名稱。</p></details><details><summary>我的紀錄會傳到伺服器嗎？</summary><p>目前沒有帳號系統，內容只存在使用中瀏覽器的 localStorage。清除網站資料、使用無痕模式或換裝置都可能造成紀錄無法讀取，請定期匯出 JSON。</p></details><details><summary>退回能力頁數材料會退回基礎同調嗎？</summary><p>不會。雞蛋／羽毛／精油用於能力頁數且可全額回收；基礎同調使用同名幻獸碎片，是獨立養成系統。</p></details><details><summary>報告計算錯誤或想提出功能建議？</summary><p>使用上方「問題回報」填寫問題，可帶入 GitHub Issues（需登入 GitHub 並提交），或改用 <a href="mailto:${FEEDBACK_EMAIL}">Email</a>。</p></details></section>`;
   }
   function switchCharacter(id){
     if(id===PROFILES.activeId)return;
@@ -760,8 +774,22 @@
       case 'open-tool':UI.route='pet';UI.tab='collection';location.hash='#/pet';render();window.scrollTo(0,0);break;
       case 'go-home':UI.route='home';location.hash='#/';render();window.scrollTo(0,0);break;
       case 'open-manual':UI.tab='manual';render();window.scrollTo(0,0);break;
+      case 'toggle-catalog':UI.catalogOpen=!UI.catalogOpen;render();break;
       case 'open-feedback':UI.feedbackOpen=true;render();document.getElementById('feedback-description')?.focus();break;
       case 'close-feedback':UI.feedbackOpen=false;render();break;
+      case 'send-feedback-github':{
+        const category=document.getElementById('feedback-category')?.value||'問題回報';
+        const content=document.getElementById('feedback-description')?.value?.trim()||'';
+        if(content.length<5){notify('請至少填寫5個字的問題內容。',true);document.getElementById('feedback-description')?.focus();return}
+        // 純靜態頁面不可在前端安全儲存 GitHub Token。採預填議題連結，由玩家登入並確認提交。
+        const title=`【杖劍工具集 ${SITE_VERSION}】${category}`;
+        const body=`### 問題分類\n${category}\n\n### 使用工具\n幻獸養成規劃工具\n\n### 問題或建議說明\n${content}\n\n### 網站版本\n${SITE_VERSION}\n\n> 注意：GitHub Issues 是公開內容。請勿附上個資、密碼或完整備份檔。`;
+        const url=`${FEEDBACK_ISSUES_URL}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+        const popup=window.open(url,'_blank');
+        if(popup){try{popup.opener=null}catch{}}else window.location.assign(url);
+        notify('已開啟 GitHub 議題頁，需在 GitHub 登入並確認提交才算完成回報。');
+        break;
+      }
       case 'send-feedback':{
         const category=document.getElementById('feedback-category')?.value||'問題回報';
         const content=document.getElementById('feedback-description')?.value?.trim()||'';
