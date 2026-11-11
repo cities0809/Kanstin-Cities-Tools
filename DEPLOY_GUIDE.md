@@ -3,10 +3,10 @@
 ## A. 新手：瀏覽器操作上架
 
 1. 先下載網站完整原始碼 ZIP，**解壓縮**，確認資料夾內有 `index.html`、`app.js`、`data.js`、`styles.css`、`README.md`、`.nojekyll`。
-2. 登入 GitHub，右上角 **+ → New repository**，範例名稱 `wheat-sword-tools`。選 **Public**，點 **Create repository**。
+2. 登入 GitHub，右上角 **+ → New repository**，範例名稱 `Kanstin-Cities-Tools`。選 **Public**，點 **Create repository**。
 3. 在儲存庫主頁點 **Add file → Upload files**，把解壓縮後的檔案**放在儲存庫根目錄**，點 **Commit changes**。不要上傳 ZIP 本身來取代解壓縮檔案。
 4. 開啟 **Settings → Pages**，在 **Build and deployment** 的 **Source** 選 **Deploy from a branch**，選 `main` 與 `/(root)`，按 **Save**。
-5. 等部署流程完成，在 **Settings → Pages → Visit site** 開啟。網址通常是 `https://你的GitHub帳號.github.io/wheat-sword-tools/`。
+5. 等部署流程完成，在 **Settings → Pages → Visit site** 開啟。網址通常是 `https://cities0809.github.io/Kanstin-Cities-Tools/`。
 6. 在電腦及手機測試首頁、進入工具、切換角色、設定幻獸、匯出 JSON、操作手冊與問題回報。
 7. 日後更新時，對照檔案版本，把變更的 `app.js`、`styles.css` 等重新上傳，GitHub Pages 會根據新的 commit 重新部署。
 
@@ -15,11 +15,11 @@
 ## B. 使用 Git 指令更新（熟悉 Git 時）
 
 ```bash
-git clone https://github.com/你的GitHub帳號/wheat-sword-tools.git
-cd wheat-sword-tools
+git clone https://github.com/cities0809/Kanstin-Cities-Tools.git
+cd Kanstin-Cities-Tools
 # 把新版本網站檔案複製到此資料夾，檢查內容後執行：
 git add index.html app.js data.js styles.css README.md DEPLOY_GUIDE.md .nojekyll
-git commit -m "Release tools hub v1.0.0"
+git commit -m "Release tools hub v1.0.1"
 git push origin main
 ```
 

@@ -1,11 +1,11 @@
-/* 小麥的杖劍工具集 v1.0.0：幻獸養成規劃工具，GitHub Pages 靜態網站。 */
+/* 小麥的杖劍工具集 v1.0.1：幻獸養成規劃工具，GitHub Pages 靜態網站。 */
 (() => {
   'use strict';
   const G = window.GAME_DATA;
   const ROOT = document.querySelector('#app');
   const LEGACY_SAVE_KEY = 'fantasy-pet-planner-v1';
   const PROFILE_SAVE_KEY = 'wheat-sword-tools-characters-v1';
-  const SITE_VERSION = 'v1.0.0';
+  const SITE_VERSION = 'v1.0.1';
   const FEEDBACK_EMAIL = 'cities0809@gmail.com';
   const TYPE_ORDER = ['防禦', '攻擊', '輔助'];
   const RARITY_ORDER = ['奇蹟', '傳說', '稀有'];
@@ -27,11 +27,21 @@
     const n = Number(x);
     return Number.isFinite(n) && n >= 0 && n <= max ? n : null;
   };
-  const pct = x => x == null ? '—' : ((x * 100).toFixed(2) + '%');
-  const petPct = x => x == null ? '—' : `${(x * 100).toFixed((x*100 + 1e-10) < 10 ? 2 : 1)}%`;
+  // 百分比統一依遊戲顯示規則：未滿10%保留2位，10%及以上保留1位，皆無條件捨去。
+  // 僅格式化輸出；最佳化評分與內部屬性加總仍保留原始精度。
+  const gamePercentText = ratio => {
+    if (ratio == null || !Number.isFinite(ratio)) return '—';
+    const points = Math.round(Math.abs(ratio) * 100 * 1e10) / 1e10;
+    const digits = points < 10 ? 2 : 1;
+    const scale = 10 ** digits;
+    const shown = Math.floor(points * scale + 1e-9) / scale;
+    return `${ratio < 0 ? '−' : ''}${shown.toFixed(digits)}%`;
+  };
+  const pct = gamePercentText;
+  const petPct = gamePercentText;
   const numberDelta = (x, asPct=false) => {
     if (x == null) return '—';
-    const abs = asPct ? (Math.abs(x) * 100).toFixed(2) + '%' : fmtN.format(Math.abs(x));
+    const abs = asPct ? gamePercentText(Math.abs(x)) : fmtN.format(Math.abs(x));
     return (x > 0 ? '+' : x < 0 ? '−' : '±') + abs;
   };
   const stageLabel = n => ['關鍵節點','第1節點','第2節點'][n] ?? '未知節點';
@@ -224,8 +234,8 @@
     return UI.optimizerWeights.map(x=>Math.max(0,Math.min(10,Number(x)||0)));
   }
   const optGoalOptions=[
-    ['total','六項屬性總和最高'],['attack','攻擊優先（會心＋精準＋傷害加成）'],
-    ['defense','防禦優先（格擋＋會抗＋傷害抵抗）'],
+    ['total','六項屬性總和最高'],['attack','攻擊優先（爆擊率＋精準＋傷害加成）'],
+    ['defense','防禦優先（格檔率＋爆擊抵抗＋傷害抵抗）'],
     ...G.labels.map((name,i)=>['attr'+i,name+'最高']),['custom','自訂六項屬性權重']
   ];
   function optScore(vec,weights){return vec.reduce((sum,v,k)=>sum+v*weights[k],0)}

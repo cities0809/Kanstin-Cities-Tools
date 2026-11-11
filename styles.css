@@ -60,7 +60,7 @@
 @media(max-width:780px){.planner-budget{grid-template-columns:1fr}.planning-method{grid-template-columns:1fr}.planner-next-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.planning-result{padding:13px}.budget-card{padding:12px}.joint-planner .opt-diff-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-/* 小麥的杖劍工具集 v1.0.0 — 首頁 / 多角色 / 回報 / 手冊 */
+/* 小麥的杖劍工具集 v1.0.1 — 首頁 / 多角色 / 回報 / 手冊 */
 .hub-shell{min-height:100svh;position:relative;isolation:isolate;display:flex;flex-direction:column;overflow:hidden;color:#f7f5ff;background:radial-gradient(ellipse at 52% 5%,#352b5e 0%,transparent 40%),linear-gradient(140deg,#101426 0%,#1b1a38 48%,#121727 100%)}
 .hub-backdrop{position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(#f4e7bc35 1px,transparent 1px),linear-gradient(110deg,transparent 67%,#cbb07b0d 67.2%,transparent 67.5%);background-size:75px 75px,100% 100%;opacity:.74}
 .hub-glow{position:absolute;display:block;border-radius:100%;filter:blur(22px)}
