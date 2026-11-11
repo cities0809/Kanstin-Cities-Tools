@@ -60,7 +60,7 @@
 @media(max-width:780px){.planner-budget{grid-template-columns:1fr}.planning-method{grid-template-columns:1fr}.planner-next-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.planning-result{padding:13px}.budget-card{padding:12px}.joint-planner .opt-diff-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-/* 小麥的杖劍工具集 v1.0.2 — 首頁 / 多角色 / 回報 / 手冊 */
+/* 小麥的杖劍工具集 v1.0.3 — 首頁 / 多角色 / 回報 / 手冊 */
 .hub-shell{min-height:100svh;position:relative;isolation:isolate;display:flex;flex-direction:column;overflow:hidden;color:#f7f5ff;background:radial-gradient(ellipse at 52% 5%,#352b5e 0%,transparent 40%),linear-gradient(140deg,#101426 0%,#1b1a38 48%,#121727 100%)}
 .hub-backdrop{position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(#f4e7bc35 1px,transparent 1px),linear-gradient(110deg,transparent 67%,#cbb07b0d 67.2%,transparent 67.5%);background-size:75px 75px,100% 100%;opacity:.74}
 .hub-glow{position:absolute;display:block;border-radius:100%;filter:blur(22px)}
@@ -144,7 +144,7 @@
 .toolkit-home-button:hover{background:#e9e1ff;border-color:#b7a7e8}
 .toolkit-home-button:focus-visible{outline:3px solid #9681ef;outline-offset:2px}
 @media(max-width:680px){.toolkit-home-nav{width:100%}.toolkit-home-button{min-height:42px;padding:9px 14px;font-size:13px}}
-/* v1.0.2 圖鑑收合、全屬性變化細項、GitHub Issues 問題回報 */
+/* v1.0.3 圖鑑收合、全屬性變化細項、GitHub Issues 問題回報 */
 .catalog-heading{align-items:center}.catalog-toggle{flex:0 0 auto}.catalog-panel[hidden]{display:none!important}.catalog-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 13px;flex-wrap:wrap}
 .catalog-panel{margin-bottom:8px}.catalog-panel .catalog{margin-bottom:10px}
 .attr-gain-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%;min-width:0}
@@ -161,3 +161,25 @@
 
 .feedback-dialog{max-height:calc(100svh - 30px);overflow-y:auto}.feedback-actions{position:sticky;bottom:-1px;background:#fff;border-top:1px solid #e8e9f2;padding:12px 0 0;z-index:1}.feedback-actions .button.primary{order:-1}
 @media(max-width:680px){.feedback-actions{display:flex;flex-direction:column;align-items:stretch}.feedback-actions .button{width:100%;flex:none;min-height:38px}.feedback-dialog .modal-warning{margin-bottom:9px}.feedback-dialog h2{margin-bottom:8px}.feedback-dialog p{margin-bottom:12px}}
+
+/* v1.0.3 — 四個大型列表可收合、Google 表單回報視窗 */
+.collapsible-body[hidden]{display:none!important}
+.section-collapse-btn{flex:0 0 auto}
+.section-line .actions-right{align-items:center}
+.analysis-section-controls{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
+.analysis-section-controls .analysis-filter{margin:0}
+.google-form-dialog{width:min(780px,calc(100vw - 30px));max-height:min(92svh,980px);overflow:auto;padding:22px 22px 16px}
+.google-form-dialog .modal-warning{width:38px;height:38px;margin-bottom:9px;font-size:18px}
+.google-form-dialog h2{margin-bottom:5px}
+.google-form-dialog p{margin:0 0 12px}
+.google-form-frame{display:block;width:100%;height:min(63svh,740px);min-height:360px;border:1px solid #e5e8f3;border-radius:12px;background:#fafbff}
+.google-form-dialog .feedback-note{margin:9px 0}
+.google-form-dialog .feedback-platform-note{margin:14px 0 18px}
+@media(max-width:680px){
+ .section-line:has(.section-collapse-btn){align-items:start;flex-wrap:wrap}
+ .section-line .actions-right{width:100%;justify-content:space-between}
+ .analysis-section-controls{margin-top:12px;align-items:center;justify-content:space-between}
+ .analysis-section-controls .analysis-filter{flex:1;min-width:145px}
+ .google-form-dialog{padding:15px 12px;max-height:94svh}
+ .google-form-frame{height:65svh;min-height:320px}
+}
